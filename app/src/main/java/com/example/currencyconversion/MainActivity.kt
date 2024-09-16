@@ -53,6 +53,7 @@ fun CurrencyConverterUI(modifier: Modifier = Modifier) {
     var fromCurrency by remember { mutableStateOf("") }
     var toCurrency by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("Result will appear here") }
+    var awsData by remember { mutableStateOf("AWS data will appear here") }
 
     Column(
         modifier = modifier
@@ -97,6 +98,19 @@ fun CurrencyConverterUI(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(result)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Button to fetch data from AWS API
+        Button(onClick = {
+            fetchFromAWS { data ->
+                awsData = data
+            }
+        }) {
+            Text("Fetch Data from AWS")
+        }
+
+        Text(awsData)
     }
 }
 
@@ -125,6 +139,24 @@ private fun convertCurrency(amount: String, fromCurrency: String, toCurrency: St
     } else {
         onResult("Please enter valid input")
     }
+}
+
+// This function is used to connect to the AWS backend API to fetch the home page or data
+private fun fetchFromAWS(onResult: (String) -> Unit) {
+    AwsRetrofitClient.retrofitService.getData().enqueue(object : Callback<ApiResponse> {
+        override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
+            if (response.isSuccessful) {
+                val apiMessage = response.body()?.message
+                onResult("AWS Message: $apiMessage")
+            } else {
+                onResult("AWS Error: ${response.errorBody()?.string()}")
+            }
+        }
+
+        override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
+            onResult("AWS Failed: ${t.message}")
+        }
+    })
 }
 
 @Preview(showBackground = true)
